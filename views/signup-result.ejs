@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>נרשמת בהצלחה</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <main class="card">
+      <% if (alreadyExisted) { %>
+        <h2>האתר הזה כבר רשום אצלנו</h2>
+        <p>מצאנו הרשמה קיימת ל-<strong><%= site.domain %></strong>. הנה קישור הדשבורד שלך:</p>
+      <% } else { %>
+        <h2>נרשמת בהצלחה</h2>
+
+        <div class="status-box status-<%= site.status %>">
+          <strong>סטטוס:</strong>
+          <% if (site.status === 'approved') { %>
+            אושר אוטומטית — האתר יוצג להתאמות בסבב הבא.
+          <% } else if (site.status === 'pending_review') { %>
+            ממתין לבדיקה ידנית קצרה (הנתונים גבוליים). נעדכן במייל.
+          <% } else { %>
+            לצערנו האתר לא עבר את שער האיכות בשלב הזה.
+          <% } %>
+        </div>
+
+        <table class="metrics-table">
+          <tr><td>חוזק אתר (DR)</td><td><%= site.dr %> <% if (site.metricsSource === 'mock') { %><span class="badge">מדומה</span><% } %></td></tr>
+          <tr><td>ציון ספאם</td><td><%= site.spamScore %> <% if (site.metricsSource === 'mock') { %><span class="badge">מדומה</span><% } %></td></tr>
+          <tr><td>תעבורה משוערת</td><td><%= site.trafficEstimate %> <% if (site.metricsSource === 'mock') { %><span class="badge">מדומה</span><% } %></td></tr>
+        </table>
+      <% } %>
+
+      <div class="alert alert-warning">
+        <strong>שמרו את הקישור הבא</strong> — הוא מזהה אתכם ואין מערכת סיסמאות בגרסה הזו:
+        <div class="secret-link"><%= baseUrl %>/me/<%= site.secretToken %></div>
+      </div>
+
+      <a class="btn btn-primary" href="/me/<%= site.secretToken %>">מעבר לדשבורד שלי</a>
+      <a class="btn-link" href="/">חזרה לעמוד הבית</a>
+    </main>
+  </div>
+</body>
+</html>

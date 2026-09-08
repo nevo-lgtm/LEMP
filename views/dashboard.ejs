@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>הדשבורד שלי — החלפת קישורים</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <main class="card">
+      <h2><%= site.domain %></h2>
+      <p class="muted"><%= site.niche %> · נרשם ב-<%= new Date(site.createdAt).toLocaleDateString('he-IL') %></p>
+
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+
+      <div class="status-box status-<%= site.status %>">
+        <strong>סטטוס האתר:</strong> <%= statusLabel %>
+      </div>
+
+      <table class="metrics-table">
+        <tr><td>חוזק אתר (DR)</td><td><%= site.dr %></td></tr>
+        <tr><td>ציון ספאם</td><td><%= site.spamScore %></td></tr>
+        <tr><td>תעבורה משוערת</td><td><%= site.trafficEstimate %></td></tr>
+      </table>
+
+      <h3>ההתאמות שלי</h3>
+
+      <% if (matches.length === 0) { %>
+        <p class="muted">
+          <% if (site.status === 'approved') { %>
+            עדיין אין התאמה. התאמות רצות בסבבים — חזרו לבדוק בהמשך.
+          <% } else { %>
+            התאמות מתחילות רק אחרי אישור האתר.
+          <% } %>
+        </p>
+      <% } %>
+
+      <% matches.forEach(function(m) { %>
+        <div class="match-card match-<%= m.status %>">
+          <div class="match-status"><%= m.statusLabel %></div>
+
+          <% if (m.revealed && m.partner) { %>
+            <p>ההתאמה שלך: <strong><%= m.partner.domain %></strong> (<%= m.partner.niche %>, DR <%= m.partner.dr %>)</p>
+            <p>מייל ליצירת קשר: <a href="mailto:<%= m.partner.email %>"><%= m.partner.email %></a></p>
+            <p class="fine-print">בצעו את הקישור בעצמכם משני הצדדים, ואז סמנו "בוצע".</p>
+          <% } else if (m.status === 'declined') { %>
+            <p class="muted">ההתאמה בוטלה. תתווסף התאמה חדשה בסבב הבא אם תהיה זמינה.</p>
+          <% } else { %>
+            <p class="muted">פרטי ההתאמה יוצגו רק אחרי ששני הצדדים יאשרו.</p>
+          <% } %>
+
+          <div class="actions">
+            <% if (m.canRespond) { %>
+              <form method="post" action="/me/<%= site.secretToken %>/matches/<%= m.id %>/confirm" class="inline">
+                <button type="submit" class="btn btn-primary">מאשר/ת התאמה</button>
+              </form>
+              <form method="post" action="/me/<%= site.secretToken %>/matches/<%= m.id %>/decline" class="inline">
+                <button type="submit" class="btn btn-secondary">לא רלוונטי</button>
+              </form>
+            <% } %>
+            <% if (m.canComplete) { %>
+              <form method="post" action="/me/<%= site.secretToken %>/matches/<%= m.id %>/complete" class="inline">
+                <button type="submit" class="btn btn-primary">סמן שהקישור פורסם</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+
+      <a class="btn-link" href="/">חזרה לעמוד הבית</a>
+    </main>
+  </div>
+</body>
+</html>

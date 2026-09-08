@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ניהול — החלפת קישורים</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap wrap-wide">
+    <h1>לוח ניהול</h1>
+
+    <% if (flash) { %>
+      <div class="alert alert-info"><%= flash %></div>
+    <% } %>
+
+    <section class="card">
+      <h2>סטטיסטיקת משפך</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-num"><%= stats.totalSignups %></div><div class="stat-label">הרשמות</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.approved %></div><div class="stat-label">אושרו</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.pendingReview %></div><div class="stat-label">ממתינים לבדיקה</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.rejected %></div><div class="stat-label">נדחו</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.matchesProposed %></div><div class="stat-label">התאמות שהוצעו</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.matchesRevealed %></div><div class="stat-label">אושרו הדדית</div></div>
+        <div class="stat stat-highlight"><div class="stat-num"><%= stats.matchesCompleted %></div><div class="stat-label">קישורים חיים בפועל</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.matchesDeclined %></div><div class="stat-label">נדחו על ידי צד</div></div>
+      </div>
+      <p class="fine-print">
+        המדד שקובע אם יש כאן מוצר הוא "קישורים חיים בפועל", לא הרשמות.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>הרצת התאמות</h2>
+      <p class="muted">
+        ספק נתונים: <strong><%= metricsProvider %></strong> ·
+        סבילות DR להתאמה: ±<%= Math.round(tolerance * 100) %>% ·
+        סף ספאם: <%= thresholds.maxSpamScore %> · סף DR מינימלי: <%= thresholds.minDr %>
+      </p>
+      <form method="post" action="/admin/run-matching">
+        <button type="submit" class="btn btn-primary">הרץ סבב התאמות עכשיו</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>תור בדיקה ידנית (<%= reviewQueue.length %>)</h2>
+      <% if (reviewQueue.length === 0) { %>
+        <p class="muted">אין אתרים הממתינים לבדיקה כרגע.</p>
+      <% } %>
+      <% reviewQueue.forEach(function(s) { %>
+        <div class="review-row">
+          <div>
+            <strong><%= s.domain %></strong> · <%= s.niche %> · <%= s.email %><br>
+            DR <%= s.dr %> · ספאם <%= s.spamScore %> · תעבורה <%= s.trafficEstimate %>
+            <% if (s.metricsSource === 'mock') { %><span class="badge">מדומה</span><% } %>
+            <div class="fine-print">סיבות: <%= (s.gateReasons || []).join('; ') %></div>
+          </div>
+          <div class="actions">
+            <form method="post" action="/admin/sites/<%= s.id %>/approve" class="inline">
+              <button type="submit" class="btn btn-primary">אשר</button>
+            </form>
+            <form method="post" action="/admin/sites/<%= s.id %>/reject" class="inline">
+              <button type="submit" class="btn btn-secondary">דחה</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </section>
+
+    <section class="card">
+      <h2>כל האתרים (<%= sites.length %>)</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>דומיין</th><th>נישה</th><th>DR</th><th>ספאם</th><th>תעבורה</th><th>סטטוס</th><th>נרשם</th></tr>
+        </thead>
+        <tbody>
+          <% sites.forEach(function(s) { %>
+            <tr>
+              <td><%= s.domain %></td>
+              <td><%= s.niche %></td>
+              <td><%= s.dr %></td>
+              <td><%= s.spamScore %></td>
+              <td><%= s.trafficEstimate %></td>
+              <td><span class="pill pill-<%= s.status %>"><%= s.status %></span></td>
+              <td><%= new Date(s.createdAt).toLocaleDateString('he-IL') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>כל ההתאמות (<%= matchRows.length %>)</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>אתר א'</th><th>אתר ב'</th><th>נישה</th><th>סטטוס</th><th>נוצר</th></tr>
+        </thead>
+        <tbody>
+          <% matchRows.forEach(function(m) { %>
+            <tr>
+              <td><%= m.siteA ? m.siteA.domain : '-' %></td>
+              <td><%= m.siteB ? m.siteB.domain : '-' %></td>
+              <td><%= m.niche %></td>
+              <td><span class="pill pill-<%= m.status %>"><%= m.statusLabel %></span></td>
+              <td><%= new Date(m.createdAt).toLocaleDateString('he-IL') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

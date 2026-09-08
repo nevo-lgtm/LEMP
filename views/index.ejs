@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>החלפת קישורים חכמה למקדמי אתרים בישראל</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>החלפת קישורים בין אתרים ישראליים, עם שער איכות אוטומטי</h1>
+      <p class="lead">
+        גרסת בדיקת-דופק (MVP). מוסיפים אתר, המערכת בודקת חוזק ורמת ספאם באופן אוטומטי,
+        ומציעה התאמה לאתר אחר באותה נישה ובעוצמה דומה. שני הצדדים מאשרים לפני שנחשפים
+        פרטי קשר — אתם מבצעים את הקישור בעצמכם.
+      </p>
+    </header>
+
+    <main class="card">
+      <h2>הוספת אתר</h2>
+
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+
+      <form method="post" action="/signup" class="stack">
+        <label>
+          כתובת מייל
+          <input type="email" name="email" required placeholder="you@example.com"
+                 value="<%= values.email || '' %>">
+        </label>
+
+        <label>
+          כתובת האתר
+          <input type="text" name="url" required placeholder="https://example.co.il"
+                 value="<%= values.url || '' %>">
+        </label>
+
+        <label>
+          נישה
+          <select name="niche" required>
+            <option value="" disabled <%= !values.niche ? 'selected' : '' %>>בחר נישה...</option>
+            <% niches.forEach(function(n) { %>
+              <option value="<%= n %>" <%= values.niche === n ? 'selected' : '' %>><%= n %></option>
+            <% }) %>
+          </select>
+        </label>
+
+        <button type="submit" class="btn btn-primary">בדוק את האתר שלי</button>
+      </form>
+
+      <p class="fine-print">
+        בהרשמה נבדקים אוטומטית חוזק האתר, ציון ספאם ותעבורה משוערת. אתרים גבוליים
+        עוברים בדיקה ידנית לפני אישור. שום קישור לא מתפרסם על ידי המערכת —
+        אנחנו רק מציעים התאמה, ההחלטה והביצוע נשארים אצלכם.
+      </p>
+    </main>
+
+    <footer class="foot">
+      <a href="/admin">כניסת מנהל</a>
+    </footer>
+  </div>
+</body>
+</html>
