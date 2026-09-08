@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const SITES_FILE = path.join(DATA_DIR, 'sites.json');
 const MATCHES_FILE = path.join(DATA_DIR, 'matches.json');
+const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
 
 function ensureFile(file) {
   if (!fs.existsSync(file)) {
@@ -62,17 +63,40 @@ function findSiteByDomain(domain) {
   return listSites().find((s) => s.domain === domain) || null;
 }
 
+function sitesForSubmission(submissionId) {
+  return listSites().filter((s) => s.submissionId === submissionId);
+}
+
+const DEFAULT_RELIABILITY = { offered: 0, verified: 0, noShow: 0, removedAfterReciprocation: 0 };
+
 function insertSite(site) {
   const sites = listSites();
   const record = {
     id: id(),
     secretToken: secretToken(),
     createdAt: new Date().toISOString(),
+    reliability: { ...DEFAULT_RELIABILITY },
     ...site,
   };
   sites.push(record);
   writeJSON(SITES_FILE, sites);
   return record;
+}
+
+// Merge-adds to a site's reliability counters (never overwrites the whole
+// object, so concurrent bumps to different counters don't clobber each
+// other under last-writer-wins).
+function bumpReliability(siteId, counterPatch) {
+  const sites = listSites();
+  const idx = sites.findIndex((s) => s.id === siteId);
+  if (idx === -1) return null;
+  const current = { ...DEFAULT_RELIABILITY, ...(sites[idx].reliability || {}) };
+  for (const [key, delta] of Object.entries(counterPatch)) {
+    current[key] = (current[key] || 0) + delta;
+  }
+  sites[idx] = { ...sites[idx], reliability: current, updatedAt: new Date().toISOString() };
+  writeJSON(SITES_FILE, sites);
+  return sites[idx];
 }
 
 function updateSite(siteId, patch) {
@@ -125,17 +149,64 @@ function updateMatch(matchId, patch) {
   return matches[idx];
 }
 
+// ---------- Submissions ----------
+// A submission is one "I signed up with a list of domains under this
+// email" event. Each domain becomes its own row in `sites`, linked back
+// via `submissionId` -- the submission's secretToken is what the batch
+// approval screen and the "all my sites" dashboard are keyed on.
+
+function listSubmissions() {
+  return readJSON(SUBMISSIONS_FILE);
+}
+
+function getSubmission(submissionId) {
+  return listSubmissions().find((s) => s.id === submissionId) || null;
+}
+
+function getSubmissionByToken(token) {
+  return listSubmissions().find((s) => s.secretToken === token) || null;
+}
+
+function insertSubmission(sub) {
+  const subs = listSubmissions();
+  const record = {
+    id: id(),
+    secretToken: secretToken(),
+    createdAt: new Date().toISOString(),
+    ...sub,
+  };
+  subs.push(record);
+  writeJSON(SUBMISSIONS_FILE, subs);
+  return record;
+}
+
+function updateSubmission(submissionId, patch) {
+  const subs = listSubmissions();
+  const idx = subs.findIndex((s) => s.id === submissionId);
+  if (idx === -1) return null;
+  subs[idx] = { ...subs[idx], ...patch, updatedAt: new Date().toISOString() };
+  writeJSON(SUBMISSIONS_FILE, subs);
+  return subs[idx];
+}
+
 module.exports = {
   listSites,
   getSite,
   getSiteByToken,
   findSiteByDomain,
+  sitesForSubmission,
   insertSite,
   updateSite,
+  bumpReliability,
   listMatches,
   getMatch,
   matchesForSite,
   activeMatchExistsFor,
   insertMatch,
   updateMatch,
+  listSubmissions,
+  getSubmission,
+  getSubmissionByToken,
+  insertSubmission,
+  updateSubmission,
 };

@@ -17,30 +17,46 @@
     <section class="card">
       <h2>סטטיסטיקת משפך</h2>
       <div class="stat-grid">
-        <div class="stat"><div class="stat-num"><%= stats.totalSignups %></div><div class="stat-label">הרשמות</div></div>
-        <div class="stat"><div class="stat-num"><%= stats.approved %></div><div class="stat-label">אושרו</div></div>
-        <div class="stat"><div class="stat-num"><%= stats.pendingReview %></div><div class="stat-label">ממתינים לבדיקה</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.totalSites %></div><div class="stat-label">אתרים שנרשמו</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.processing %></div><div class="stat-label">בעיבוד / ממתינים לאישור</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.approved %></div><div class="stat-label">פעילים</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.pendingReview %></div><div class="stat-label">ממתינים לבדיקה ידנית</div></div>
         <div class="stat"><div class="stat-num"><%= stats.rejected %></div><div class="stat-label">נדחו</div></div>
         <div class="stat"><div class="stat-num"><%= stats.matchesProposed %></div><div class="stat-label">התאמות שהוצעו</div></div>
         <div class="stat"><div class="stat-num"><%= stats.matchesRevealed %></div><div class="stat-label">אושרו הדדית</div></div>
-        <div class="stat stat-highlight"><div class="stat-num"><%= stats.matchesCompleted %></div><div class="stat-label">קישורים חיים בפועל</div></div>
-        <div class="stat"><div class="stat-num"><%= stats.matchesDeclined %></div><div class="stat-label">נדחו על ידי צד</div></div>
+        <div class="stat stat-highlight"><div class="stat-num"><%= stats.matchesCompleted %></div><div class="stat-label">קישורים חיים ומאומתים</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.matchesBroken %></div><div class="stat-label">קישורים שהוסרו</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.matchesDeclined %></div><div class="stat-label">נדחו/בוטלו</div></div>
       </div>
       <p class="fine-print">
-        המדד שקובע אם יש כאן מוצר הוא "קישורים חיים בפועל", לא הרשמות.
+        המדד שקובע אם יש כאן מוצר הוא "קישורים חיים ומאומתים", לא הרשמות.
       </p>
     </section>
 
     <section class="card">
-      <h2>הרצת התאמות</h2>
+      <h2>עבודות רקע (drip + אימות)</h2>
       <p class="muted">
-        ספק נתונים: <strong><%= metricsProvider %></strong> ·
+        ספק מדדים: <strong><%= metricsProvider %></strong> ·
+        ספק מייל: <strong><%= emailProvider %></strong> ·
         סבילות DR להתאמה: ±<%= Math.round(tolerance * 100) %>% ·
         סף ספאם: <%= thresholds.maxSpamScore %> · סף DR מינימלי: <%= thresholds.minDr %>
       </p>
-      <form method="post" action="/admin/run-matching">
-        <button type="submit" class="btn btn-primary">הרץ סבב התאמות עכשיו</button>
-      </form>
+      <p class="muted">
+        הרצת Drip אחרונה: <%= schedulerState.lastDripRunAt ? new Date(schedulerState.lastDripRunAt).toLocaleString('he-IL') : 'טרם רצה' %> ·
+        סבב אימות אחרון: <%= schedulerState.lastVerificationRunAt ? new Date(schedulerState.lastVerificationRunAt).toLocaleString('he-IL') : 'טרם רץ' %>
+      </p>
+      <p class="fine-print">
+        בהרצה רגילה שני הסבבים רצים אוטומטית פעם ביום ברקע. הכפתורים כאן
+        מיועדים לבדיקה/הרצה ידנית מיידית.
+      </p>
+      <div class="actions">
+        <form method="post" action="/admin/run-drip" class="inline">
+          <button type="submit" class="btn btn-primary">הרץ סבב התאמות + שלח התראות עכשיו</button>
+        </form>
+        <form method="post" action="/admin/run-verification" class="inline">
+          <button type="submit" class="btn btn-secondary">הרץ בדיקת no-show + אימות קישורים עכשיו</button>
+        </form>
+      </div>
     </section>
 
     <section class="card">
@@ -66,6 +82,33 @@
           </div>
         </div>
       <% }) %>
+    </section>
+
+    <section class="card">
+      <h2>אמינות אתרים (<%= reliabilityRows.length %>)</h2>
+      <p class="fine-print">
+        המנגנון האנטי-שימוש-לא-הוגן: לכל אתר נספר כמה פעמים הוצעה לו התאמה,
+        כמה מהן אומתו בפועל (הקישור אכן עלה), כמה פעמים הוא "לא הופיע"
+        (לא דיווח קישור בזמן וההתאמה בוטלה אוטומטית), וכמה פעמים הוא הוריד
+        קישור אחרי שהצד השני כבר קיבל את שלו.
+      </p>
+      <table class="admin-table">
+        <thead>
+          <tr><th>דומיין</th><th>נישה</th><th>הוצעו</th><th>אומתו</th><th>no-show</th><th>הוריד אחרי הדדיות</th></tr>
+        </thead>
+        <tbody>
+          <% reliabilityRows.forEach(function(r) { %>
+            <tr>
+              <td><%= r.domain %></td>
+              <td><%= r.niche %></td>
+              <td><%= r.offered %></td>
+              <td><%= r.verified %></td>
+              <td><%= r.noShow %></td>
+              <td><%= r.removedAfterReciprocation %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </section>
 
     <section class="card">
@@ -108,6 +151,25 @@
           <% }) %>
         </tbody>
       </table>
+    </section>
+
+    <section class="card">
+      <h2>יומן מיילים מדומים (<%= notifications.length %>)</h2>
+      <p class="fine-print">
+        ספק המייל כרגע הוא <strong><%= emailProvider %></strong> — כל עוד הוא
+        <code>mock</code>, שום מייל לא באמת יוצא; הרשומות כאן הן מה שהיה נשלח.
+      </p>
+      <% if (notifications.length === 0) { %>
+        <p class="muted">עדיין לא נשלחו התראות.</p>
+      <% } %>
+      <% notifications.forEach(function(n) { %>
+        <div class="review-row">
+          <div>
+            <strong><%= n.to %></strong> — <%= n.subject %>
+            <div class="fine-print"><%= new Date(n.sentAt).toLocaleString('he-IL') %></div>
+          </div>
+        </div>
+      <% }) %>
     </section>
   </div>
 </body>

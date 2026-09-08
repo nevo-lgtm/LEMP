@@ -221,6 +221,26 @@ input:focus, select:focus {
 
 .match-revealed, .match-completed { border-color: var(--green); }
 .match-declined { opacity: 0.6; }
+.match-link_removed { border-color: var(--red); }
+
+.site-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.placement-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.placement-form input[type="text"] {
+  flex: 1;
+  min-width: 220px;
+}
 
 .stat-grid {
   display: grid;

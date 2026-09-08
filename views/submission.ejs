@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <% if (stillProcessing) { %><meta http-equiv="refresh" content="6"><% } %>
+  <title>הדשבורד שלי — החלפת קישורים</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap wrap-wide">
+    <h1>הדשבורד שלך</h1>
+    <p class="muted"><%= submission.email %></p>
+
+    <% if (flash) { %><div class="alert alert-info"><%= flash %></div><% } %>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+    <% if (stillProcessing) { %>
+      <div class="alert alert-warning">
+        עדיין מנתחים חלק מהאתרים (סורקים עמודים, בודקים חוזק וספאם) — הדף
+        יתרענן אוטומטית כל כמה שניות.
+      </div>
+    <% } %>
+
+    <% if (submission.skippedDomains && submission.skippedDomains.length > 0) { %>
+      <div class="alert alert-warning">
+        הדומיינים הבאים כבר רשומים במערכת (תחת הרשמה כלשהי) ולכן לא נוספו שוב:
+        <%= submission.skippedDomains.join(', ') %>
+      </div>
+    <% } %>
+
+    <% if (awaitingReview.length === 0 && rejected.length === 0 && liveWithMatches.length === 0 && !stillProcessing) { %>
+      <div class="alert alert-info">
+        לא נוספו אתרים חדשים בהרשמה הזו — כל הדומיינים שציינתם כבר קיימים
+        במערכת. אם זה האתר שלכם, חפשו את הקישור לדשבורד שקיבלתם בהרשמה
+        הקודמת.
+      </div>
+    <% } %>
+
+    <% if (awaitingReview.length > 0) { %>
+      <section class="card">
+        <h2>אתרים שממתינים לאישורך (<%= awaitingReview.length %>)</h2>
+        <p class="muted">בדקו את הקטגוריה שזיהינו לכל אתר, תקנו אם צריך, ואשרו הכל בסוף.</p>
+
+        <form method="post" action="/s/<%= submission.secretToken %>/confirm" class="stack">
+          <% awaitingReview.forEach(function(s) { %>
+            <div class="review-row">
+              <div>
+                <strong><%= s.domain %></strong><br>
+                DR <%= s.dr %> · ספאם <%= s.spamScore %> · תעבורה <%= s.trafficEstimate %>
+                <% if (s.metricsSource === 'mock') { %><span class="badge">מדומה</span><% } %>
+                <div class="fine-print">
+                  <% if (s.gateVerdict === 'approved') { %>
+                    ✓ יאושר אוטומטית לאחר אישורך
+                  <% } else { %>
+                    ⚠ ידרוש בדיקה ידנית שלנו לפני שיהיה פעיל (<%= (s.gateReasons || []).join('; ') %>)
+                  <% } %>
+                </div>
+              </div>
+              <div>
+                <select name="niche_<%= s.id %>">
+                  <% niches.forEach(function(n) { %>
+                    <option value="<%= n %>" <%= s.niche === n ? 'selected' : '' %>><%= n %></option>
+                  <% }) %>
+                </select>
+              </div>
+            </div>
+          <% }) %>
+          <button type="submit" class="btn btn-primary">אשר הכל והמשך</button>
+        </form>
+      </section>
+    <% } %>
+
+    <% if (liveWithMatches.length > 0) { %>
+      <section class="card">
+        <h2>האתרים הפעילים שלך</h2>
+        <% liveWithMatches.forEach(function(item) { %>
+          <div class="site-block">
+            <h3><%= item.site.domain %> <span class="muted">— <%= item.site.niche %></span></h3>
+            <div class="status-box status-<%= item.site.status %>">
+              <%= item.site.status === 'approved' ? 'פעיל, ממתין להתאמות' : 'ממתין לבדיקה ידנית שלנו' %>
+            </div>
+
+            <% if (item.matches.length === 0) { %>
+              <p class="muted">עדיין אין התאמה לאתר הזה. התאמות רצות בסבבים יומיים.</p>
+            <% } %>
+
+            <% item.matches.forEach(function(m) { %>
+              <div class="match-card match-<%= m.status %>">
+                <div class="match-status"><%= m.statusLabel %></div>
+
+                <% if (m.revealed && m.partner) { %>
+                  <p>ההתאמה: <strong><%= m.partner.domain %></strong> (<%= m.partner.niche %>, DR <%= m.partner.dr %>)</p>
+                  <p>מייל ליצירת קשר: <a href="mailto:<%= m.partner.email %>"><%= m.partner.email %></a></p>
+
+                  <% if (m.myPlacementUrl) { %>
+                    <p class="fine-print">
+                      דיווחת שהקישור נמצא ב: <a href="<%= m.myPlacementUrl %>" target="_blank" rel="noopener"><%= m.myPlacementUrl %></a>
+                      — <%= m.myVerified ? '✓ אומת אוטומטית' : 'ממתין לאימות (בדיקה יומית)' %>
+                    </p>
+                  <% } %>
+                  <% if (m.partnerPlacementUrl) { %>
+                    <p class="fine-print">
+                      הצד השני דיווח על קישור ב: <%= m.partnerPlacementUrl %>
+                      — <%= m.partnerVerified ? '✓ אומת אוטומטית' : 'ממתין לאימות' %>
+                    </p>
+                  <% } %>
+                  <% if (m.status === 'link_removed') { %>
+                    <p class="alert alert-error">אחד הקישורים שהיו מאומתים כבר לא נמצא בבדיקה האחרונה.</p>
+                  <% } %>
+                <% } else if (m.status === 'declined') { %>
+                  <p class="muted">ההתאמה בוטלה.</p>
+                <% } else { %>
+                  <p class="muted">פרטי ההתאמה יוצגו רק אחרי ששני הצדדים יאשרו.</p>
+                <% } %>
+
+                <div class="actions">
+                  <% if (m.canRespond) { %>
+                    <form method="post" action="/s/<%= submission.secretToken %>/matches/<%= m.id %>/confirm" class="inline">
+                      <button type="submit" class="btn btn-primary">מאשר/ת התאמה</button>
+                    </form>
+                    <form method="post" action="/s/<%= submission.secretToken %>/matches/<%= m.id %>/decline" class="inline">
+                      <button type="submit" class="btn btn-secondary">לא רלוונטי</button>
+                    </form>
+                  <% } %>
+                  <% if (m.canSubmitPlacement) { %>
+                    <form method="post" action="/s/<%= submission.secretToken %>/matches/<%= m.id %>/placement" class="inline placement-form">
+                      <input type="text" name="placementUrl" placeholder="כתובת העמוד שבו שמת את הקישור" required>
+                      <button type="submit" class="btn btn-primary">שלחתי, בדוק אותי</button>
+                    </form>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% }) %>
+      </section>
+    <% } %>
+
+    <% if (rejected.length > 0) { %>
+      <section class="card">
+        <h2>אתרים שלא עברו (<%= rejected.length %>)</h2>
+        <% rejected.forEach(function(s) { %>
+          <div class="review-row">
+            <div>
+              <strong><%= s.domain %></strong>
+              <div class="fine-print"><%= (s.gateReasons || []).join('; ') %></div>
+            </div>
+          </div>
+        <% }) %>
+      </section>
+    <% } %>
+
+    <a class="btn-link" href="/">חזרה לעמוד הבית</a>
+  </div>
+</body>
+</html>

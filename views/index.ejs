@@ -11,20 +11,22 @@
     <header class="hero">
       <h1>החלפת קישורים בין אתרים ישראליים, עם שער איכות אוטומטי</h1>
       <p class="lead">
-        גרסת בדיקת-דופק (MVP). מוסיפים אתר, המערכת בודקת חוזק ורמת ספאם באופן אוטומטי,
-        ומציעה התאמה לאתר אחר באותה נישה ובעוצמה דומה. שני הצדדים מאשרים לפני שנחשפים
-        פרטי קשר — אתם מבצעים את הקישור בעצמכם.
+        רושמים מייל אחד ואת כל האתרים שאתם מנהלים. המערכת מנתחת כל אתר —
+        חוזק, רמת ספאם וקטגוריה — ומציגה לכם לאישור. אחרי האישור, כל אתר
+        מקבל מדי פעם הצעת החלפת קישור עם אתר בעל עוצמה ונישה דומה. שני
+        הצדדים מאשרים לפני שנחשפים פרטי קשר, ואנחנו גם מוודאים אוטומטית
+        שהקישור אכן פורסם.
       </p>
     </header>
 
     <main class="card">
-      <h2>הוספת אתר</h2>
+      <h2>הוספת האתרים שלכם</h2>
 
       <% if (error) { %>
         <div class="alert alert-error"><%= error %></div>
       <% } %>
 
-      <form method="post" action="/signup" class="stack">
+      <form method="post" action="/submit" enctype="multipart/form-data" class="stack">
         <label>
           כתובת מייל
           <input type="email" name="email" required placeholder="you@example.com"
@@ -32,28 +34,23 @@
         </label>
 
         <label>
-          כתובת האתר
-          <input type="text" name="url" required placeholder="https://example.co.il"
-                 value="<%= values.url || '' %>">
+          רשימת דומיינים (אחד בכל שורה, או מופרדים בפסיקים)
+          <textarea name="domainsText" rows="6" placeholder="example.co.il&#10;another-site.co.il"><%= values.domainsText || '' %></textarea>
         </label>
 
         <label>
-          נישה
-          <select name="niche" required>
-            <option value="" disabled <%= !values.niche ? 'selected' : '' %>>בחר נישה...</option>
-            <% niches.forEach(function(n) { %>
-              <option value="<%= n %>" <%= values.niche === n ? 'selected' : '' %>><%= n %></option>
-            <% }) %>
-          </select>
+          או להעלות קובץ CSV עם עמודת דומיינים (אופציונלי)
+          <input type="file" name="domainsFile" accept=".csv,text/csv,text/plain">
         </label>
 
-        <button type="submit" class="btn btn-primary">בדוק את האתר שלי</button>
+        <button type="submit" class="btn btn-primary">בדוק את האתרים שלי</button>
       </form>
 
       <p class="fine-print">
-        בהרשמה נבדקים אוטומטית חוזק האתר, ציון ספאם ותעבורה משוערת. אתרים גבוליים
-        עוברים בדיקה ידנית לפני אישור. שום קישור לא מתפרסם על ידי המערכת —
-        אנחנו רק מציעים התאמה, ההחלטה והביצוע נשארים אצלכם.
+        לכל אתר: אנחנו סורקים כמה עמודים כדי לנחש קטגוריה, בודקים חוזק/ספאם/תעבורה
+        משוערים, ומציגים הכל לאישורכם לפני שהוא נכנס להתאמות. שום קישור לא
+        מתפרסם על ידי המערכת — אנחנו רק מציעים התאמה, הביצוע נשאר אצלכם,
+        ואנחנו בודקים אוטומטית שהוא אכן קרה.
       </p>
     </main>
 
