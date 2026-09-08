@@ -1,0 +1,19 @@
+{
+  "name": "link-exchange-mvp",
+  "version": "0.1.0",
+  "description": "MVP: automated link-exchange matching for Israeli/Hebrew website owners, with an automated quality/spam gate and double opt-in reveal.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1"
+  }
+}
